@@ -1,0 +1,13 @@
+# Compiled object files
+*.o
+app
+
+# IDE specific files
+.vscode/
+
+# Test coverage reports (gcov, lcovなど)
+*.gcno
+*.gcda
+*.gcov
+coverage/
+lcov_report/
