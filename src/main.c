@@ -20,12 +20,6 @@ const uint8_t DATA_0001[32] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
 };
-const uint8_t DATA_0100[32] = {
-    0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-};
 const uint8_t MSG[] = { 0x01, 0x02, 0x03, 0x04 };
 
 static  int nonce_function(
@@ -61,6 +55,13 @@ void schnorr(const secp256k1_context *ctx)
     secp256k1_schnorrsig_extraparams extraparams = SECP256K1_SCHNORRSIG_EXTRAPARAMS_INIT;
     extraparams.noncefp = nonce_function;
 
+    // G
+    printf("G.x =\n");
+    for (size_t i = 0; i < sizeof(GX); i++) {
+        printf("%02x", GX[i]);
+    }
+    printf("\n\n");
+
     // keypair
     ret = secp256k1_keypair_create(ctx, &keypair, DATA_0001);
     if (ret != 1) {
@@ -68,33 +69,11 @@ void schnorr(const secp256k1_context *ctx)
         return;
     }
 
-    // keypair pub
-    secp256k1_pubkey pub;
-    ret = secp256k1_keypair_pub(ctx, &pub, &keypair);
-    if (ret != 1) {
-        fprintf(stderr, "keypair_pub failed\n");
-        return;
-    }
-
-    secp256k1_xonly_pubkey pub_xonly;
-    int pk_parity;
-    ret = secp256k1_keypair_xonly_pub(ctx, &pub_xonly, &pk_parity, &keypair);
-    if (ret != 1) {
-        fprintf(stderr, "keypair_xonly_pub failed\n");
-        return;
-    }
-    uint8_t pub_serialized[32];
-    ret = secp256k1_xonly_pubkey_serialize(ctx, pub_serialized, &pub_xonly);
-    if (ret != 1) {
-        fprintf(stderr, "xonly_pubkey_serialize failed\n");
-        return;
-    }
-
-    // m = R.x || P.x || msg
-    uint8_t m[sizeof(GX) + sizeof(pub_serialized) + sizeof(MSG)];
+    // m = R.x || P.x || msg = G.x || G.x || msg
+    uint8_t m[sizeof(GX) + sizeof(GX) + sizeof(MSG)];
     memcpy(m, GX, sizeof(GX));
-    memcpy(m + sizeof(GX), pub_serialized, sizeof(pub_serialized));
-    memcpy(m + sizeof(GX) + sizeof(pub_serialized), MSG, sizeof(MSG));
+    memcpy(m + sizeof(GX), GX, sizeof(GX));
+    memcpy(m + sizeof(GX) + sizeof(GX), MSG, sizeof(MSG));
     printf("m =\n");
     for (size_t i = 0; i < sizeof(m); i++) {
         printf("%02x", m[i]);
